@@ -1,0 +1,141 @@
+Необходимо спроектировать и создать БД с помощью консоли psql:
+
+БД должна вести учет:
+– всех самолетов (добавление, удаление и редактирование информации обо всех видах самолетов, обслуживаемых аэропортом);
+– всех рейсов (добавление, удаление и редактирование информации обо всех рейсах с указанием даты отправления и прибытия, вида самолета, фамилий членов экипажа);
+– билетов (добавление, удаление и редактирование информации о распределении билетов в зависимости от типа самолета, рейса и др.);
+– предварительных заказов билетов (формирование предварительного заказа билетов на конкретный рейс, предоплата билета);
+– стоимости билетов (формирование стоимости билета в зависимости от типа самолета, рейса, класса салона);
+– пассажиров (добавление, удаление и редактирование информации обо всех пассажирах аэропорта, их багаже, номерах билетов).
+
+Далее необходимо создать дамп 1 БД и восстановить его в новой БД.
+
+
+-----------Решение проводилось в PostgreSQL (12.16) через Командную строку ОС Windows 10-----------
+
+
+#  Запустить Командную строку и ввести:
+
+psql -U postgres -h localhost -W
+
+для подключения к базе данных PostgreSQL.
+
+
+#  Создать базу данных:
+
+CREATE DATABASE airport;
+
+
+#  Переход в созданную базу данных:
+
+\c airport;
+
+
+#  Создать таблицы:
+
+CREATE TABLE planes (
+    id       SERIAL        PRIMARY KEY,
+    name     VARCHAR,
+    capacity INTEGER,
+    airline  VARCHAR 
+);
+
+
+CREATE TABLE flights (
+    id             SERIAL        PRIMARY KEY,
+    airplane_id    INTEGER       REFERENCES planes (id),
+    departure_date TIMESTAMP,
+    arrival_date   TIMESTAMP,
+    crew_members   VARCHAR 
+);
+
+
+CREATE TABLE tickets (
+    id           SERIAL       PRIMARY KEY,
+    flight_id    INTEGER      REFERENCES flights (id),
+    passenger_id INTEGER      REFERENCES passengers (id),
+    seat_number  VARCHAR
+);
+
+CREATE TABLE orders (
+    id             SERIAL  PRIMARY KEY,
+    flight_id      INTEGER REFERENCES flights (id),
+    passenger_id   INTEGER REFERENCES passengers (id),
+    payment_status BOOLEAN
+);
+
+CREATE TABLE ticket_prices (
+    id          SERIAL          PRIMARY KEY,
+    airplane_id INTEGER         REFERENCES planes (id),
+    flight_id   INTEGER         REFERENCES flights (id),
+    class       VARCHAR,
+    price       DECIMAL
+);
+
+CREATE TABLE passengers (
+    id             SERIAL         PRIMARY KEY,
+    first_name     VARCHAR,
+    last_name      VARCHAR,
+    baggage_weight DECIMAL,
+    ticket_number  VARCHAR 
+);
+
+#  Просмотреть список всех созданных таблиц в базе данных airport:
+
+\dt
+
+              Список отношений
+ Схема  |      Имя      |   Тип   | Владелец
+--------+---------------+---------+----------
+ public | flights       | таблица | admin
+ public | orders        | таблица | admin
+ public | passengers    | таблица | admin
+ public | planes        | таблица | admin
+ public | ticket_prices | таблица | admin
+ public | tickets       | таблица | admin
+(6 строк)
+
+
+#  Создать новую базу данных:
+
+CREATE DATABASE airport_new;
+
+
+#  Выход из psql в Командную строку:
+
+\q
+
+#  Ввод команды для создания дампа базы данных:
+
+pg_dump -U postgres -d airport > airport_dump.sql
+
+
+#  Ввод команды для переноса дампа базы данных в новую базу данных:
+
+psql -U postgres -d airport_new < airport_dump.sql
+
+
+#  Подключиться к базе данных PostgreSQL для проверки о переносе дампа в новую базу данных:
+
+psql -U postgres -h localhost -W
+
+\с airport_new
+
+Вы подключены к базе данных "airport_new" как пользователь "postgres".
+
+#  Вывод списка таблиц:
+
+\dt
+
+
+airport_new=# \dt
+              Список отношений
+ Схема  |      Имя      |   Тип   | Владелец
+--------+---------------+---------+----------
+ public | flights       | таблица | postgres
+ public | orders        | таблица | postgres
+ public | passengers    | таблица | postgres
+ public | planes        | таблица | postgres
+ public | ticket_prices | таблица | postgres
+ public | tickets       | таблица | postgres
+(6 строк)
