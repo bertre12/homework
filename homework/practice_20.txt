@@ -1,0 +1,148 @@
+Спроектируйте и реализуйте с помощью транзакций БД не менее 5-ти таблиц для системы бронирования в кафе. Откатитесь до произвольного savepoint.
+
+
+-----------Решение проводилось в PostgreSQL (12.16) через Командную строку ОС Windows 10-----------
+
+
+#  Спроектировать базу данных coffee_shop:
+
+1. Таблица "Пользователи" (users):
+   - id (уникальный идентификатор пользователя)
+   - имя (name)
+   - электронная почта (email)
+   - пароль (password)
+
+2. Таблица "Кафе" (cafes):
+   - id (уникальный идентификатор кафе)
+   - название (name)
+   - адрес (address)
+   - телефон (phone)
+
+3. Таблица "Столики" (tables):
+   - id (уникальный идентификатор столика)
+   - id кафе (cafe_id)
+   - количество мест (seats)
+
+4. Таблица "Заказы" (orders):
+   - id (уникальный идентификатор заказа)
+   - id пользователя (user_id)
+   - id кафе (cafe_id)
+   - id столика (table_id)
+   - дата и время начала (start_time)
+   - дата и время окончания (end_time)
+
+5. Таблица "Меню" (menu):
+   - id (уникальный идентификатор позиции меню)
+   - id кафе (cafe_id)
+   - название (name)
+   - описание (description)
+   - цена (price)
+   
+#  Создать базу данных coffee_shop:
+
+CREATE DATABASE coffee_shop;
+
+#  Переход в созданную базу данных:
+
+\c coffee_shop;
+
+
+#  Создать таблицы:
+
+CREATE TABLE users (
+    id       INTEGER        PRIMARY KEY,
+    name     VARCHAR  NOT NULL,
+    email    VARCHAR  NOT NULL,
+    password VARCHAR  NOT NULL
+);
+
+CREATE TABLE cafes (
+    id      INTEGER        PRIMARY KEY,
+    name    VARCHAR  NOT NULL,
+    address VARCHAR  NOT NULL,
+    phone   VARCHAR  NOT NULL
+);
+
+CREATE TABLE tables (
+    id      INTEGER  PRIMARY KEY,
+    cafe_id INTEGER REFERENCES cafes (id),
+    seats   INTEGER NOT NULL
+);
+
+CREATE TABLE orders (
+    id         INTEGER    PRIMARY KEY,
+    user_id    INTEGER   REFERENCES users (id),
+    cafe_id    INTEGER   REFERENCES cafes (id),
+    table_id   INTEGER   REFERENCES tables (id),
+    start_time TIMESTAMP NOT NULL,
+    end_time   TIMESTAMP NOT NULL
+);
+
+CREATE TABLE menu (
+    id          INTEGER          PRIMARY KEY,
+    cafe_id     INTEGER         REFERENCES cafes (id),
+    name        VARCHAR    NOT NULL,
+    description TEXT,
+    price       NUMERIC  NOT NULL
+);
+
+#  Просмотреть список всех созданных таблиц в базе данных coffee_shop:
+
+\dt
+
+coffee_shop=# \dt
+           Список отношений
+ Схема  |  Имя   |   Тип   | Владелец
+--------+--------+---------+----------
+ public | cafes  | таблица | postgres
+ public | menu   | таблица | postgres
+ public | orders | таблица | postgres
+ public | tables | таблица | postgres
+ public | users  | таблица | postgres
+(5 строк)
+
+
+#  Начать новую транзакцию и создать точку сохранения внутри текущей транзакции:
+
+BEGIN;
+SAVEPOINT my_savepoint;
+
+
+# Заполнить таблицу cafes произвольными данными:
+
+INSERT INTO cafes(id, name, address, phone) 
+VALUES (1,'Игорь',  'Гродно', '+375251234567'),
+(2, 'Дарья', 'Гродно', '+375337895634'),
+(3, 'Максим', 'Озерцо', '+375443215476');
+
+
+# Просмотреть таблицу cafes:
+
+SELECT * FROM cafes;
+
+ id |  name  | address |     phone
+----+--------+---------+---------------
+  1 | Игорь  | Гродно  | +375251234567
+  2 | Дарья  | Гродно  | +375337895634
+  3 | Максим | Озерцо  | +375443215476
+(3 строки)
+
+
+#  Откатывает изменения до указанной точки сохранения внутри текущей транзакции:
+
+ROLLBACK TO SAVEPOINT my_savepoint;
+
+
+# Просмотреть таблицу cafes после отката до контрольной точки:
+
+SELECT * FROM cafes;
+
+coffee_shop=# SELECT * FROM cafes;
+ id | name | address | phone
+----+------+---------+-------
+(0 строк)
+
+
+# Сохраняет изменения, внесенные в рамках текущей транзакции, и завершает транзакцию:
+
+COMMIT;
