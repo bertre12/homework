@@ -1,0 +1,235 @@
+Создайте БД для Новостного портала. Спроектируйте отношения между таблицами. По возможности реализуйте триггеры, где они нужны.
+
+
+-----------Решение проводилось в PostgreSQL (12.16) через Командную строку ОС Windows 10-----------
+
+
+#  Запустить Командную строку и ввести:
+
+psql -U postgres -h localhost -W
+
+для подключения к базе данных PostgreSQL.
+
+
+#  Создать базу данных:
+
+CREATE DATABASE news_portal;
+
+
+#  Переход в созданную базу данных:
+
+\c news_portal
+
+#  Создать таблицы:
+
+-- Создание таблицы "Новости" --
+
+CREATE TABLE IF NOT EXISTS News (
+    id SERIAL PRIMARY KEY,
+    header VARCHAR,
+    content TEXT,
+    publication_date DATE,
+    author_id INTEGER REFERENCES Authors(id)
+);
+
+-- Создание таблицы "Категории новостей" --
+
+CREATE TABLE IF NOT EXISTS News_Categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    description TEXT
+);
+
+-- Создание таблицы "Авторы" --
+
+CREATE TABLE IF NOT EXISTS Authors (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR,
+    second_name VARCHAR,
+    email VARCHAR,
+    registration_date DATE
+);
+
+-- Создание таблицы "Комментарии" --
+
+CREATE TABLE IF NOT EXISTS Comments (
+    id SERIAL PRIMARY KEY,
+    item_id INTEGER REFERENCES News(id),
+    user_id INTEGER REFERENCES Users(id),
+    word TEXT,
+    date_time TIMESTAMP
+);
+
+-- Создание таблицы "Пользователи" --
+
+CREATE TABLE IF NOT EXISTS Users (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR,
+    second_name VARCHAR,
+    email VARCHAR,
+    password VARCHAR,
+    registration_date DATE
+);
+
+-- Создание таблицы "Избранное" --
+
+CREATE TABLE IF NOT EXISTS Favorites (
+    user_id INTEGER REFERENCES Users(id),
+    item_id INTEGER REFERENCES News(id),
+    add_date DATE,
+    PRIMARY KEY (user_id, item_id)
+);
+
+-- Создание таблицы "Теги новостей" --
+
+CREATE TABLE IF NOT EXISTS news_tags (
+    id SERIAL PRIMARY KEY,
+    appellation VARCHAR,
+    description TEXT
+);
+
+
+-- Создание таблицы "Рекламные блоки" --
+
+CREATE TABLE IF NOT EXISTS Ad_Blocks (
+    id SERIAL PRIMARY KEY,
+    headline VARCHAR,
+    content TEXT,
+    start_date DATE,
+    expiration_date DATE,
+    price DECIMAL
+);
+
+-- Создание таблицы "Подписки пользователей" --
+
+CREATE TABLE IF NOT EXISTS User_Subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES Users(id),
+    news_category_id INTEGER REFERENCES News_Categories(id),
+    author_id INTEGER REFERENCES Authors(id),
+    subscription_date DATE
+);
+
+-- Создание таблицы "Изображения новостей" --
+
+CREATE TABLE IF NOT EXISTS News_images (
+    id SERIAL PRIMARY KEY,
+    news_id INTEGER REFERENCES News(id),
+    url_images VARCHAR,
+    description TEXT,
+    add_date DATE
+);
+
+-- Создание таблицы "События" --
+
+CREATE TABLE IF NOT EXISTS Events (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR,
+    description TEXT,
+    date_venue VARCHAR
+);
+
+- Создание таблицы "Теги авторов" --
+
+CREATE TABLE IF NOT EXISTS Author_tags (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR,
+    description TEXT
+);
+
+-- Создание таблицы "Подписчики авторов" --
+
+CREATE TABLE IF NOT EXISTS subscribers (
+    subscription_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES Users(id),
+    author_id INTEGER REFERENCES Authors(id)
+);
+
+-- Создание таблицы "Статистика просмотров" --
+
+CREATE TABLE IF NOT EXISTS views_statistics (
+    news_id INTEGER PRIMARY KEY,
+    views_count INTEGER,
+    FOREIGN KEY (news_id) REFERENCES News(id)
+);
+
+-- Создание таблицы "Метки времени" --
+
+CREATE TABLE IF NOT EXISTS timestamps (
+    timestamp_id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    activity_type VARCHAR,
+    datetime TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- Создание таблицы "Статусы новостей" --
+
+CREATE TABLE IF NOT EXISTS news_status (
+    news_id INTEGER PRIMARY KEY,
+    status VARCHAR,
+    FOREIGN KEY (news_id) REFERENCES News(id)
+);
+
+-- Создание таблицы "Страны" --
+
+CREATE TABLE IF NOT EXISTS countries (
+    country_id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    other_data VARCHAR
+);
+
+-- Создание таблицы "Языки" --
+
+CREATE TABLE IF NOT EXISTS languages (
+    language_id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    other_data VARCHAR
+);
+
+-- Создание таблицы "Теги новостных категорий" --
+
+CREATE TABLE IF NOT EXISTS news_category_tags (
+    tag_id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    description VARCHAR
+);
+
+-- Создание таблицы "Статистика комментариев" --
+
+CREATE TABLE IF NOT EXISTS comments_statistics (
+    news_id INTEGER PRIMARY KEY,
+    comments_count INTEGER,
+    FOREIGN KEY (news_id) REFERENCES News(id)
+);
+
+
+#  Просмотреть список всех созданных таблиц в базе данных news_portal:
+
+\dt
+
+news_portal=# \dt
+                 Список отношений
+ Схема  |         Имя         |   Тип   | Владелец
+--------+---------------------+---------+----------
+ public | ad_blocks           | таблица | postgres
+ public | author_tags         | таблица | postgres
+ public | authors             | таблица | postgres
+ public | comments            | таблица | postgres
+ public | comments_statistics | таблица | postgres
+ public | countries           | таблица | postgres
+ public | events              | таблица | postgres
+ public | favorites           | таблица | postgres
+ public | languages           | таблица | postgres
+ public | news                | таблица | postgres
+ public | news_categories     | таблица | postgres
+ public | news_category_tags  | таблица | postgres
+ public | news_images         | таблица | postgres
+ public | news_status         | таблица | postgres
+ public | news_tags           | таблица | postgres
+ public | subscribers         | таблица | postgres
+ public | timestamps          | таблица | postgres
+ public | user_subscriptions  | таблица | postgres
+ public | users               | таблица | postgres
+ public | views_statistics    | таблица | postgres
+(20 строк)
